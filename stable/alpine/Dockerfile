@@ -1,6 +1,6 @@
 FROM alpine:3.4
 
-MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
+MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com", Dmitrii Zolotov <dzolotov@herzen.spb.ru>
 
 ENV NGINX_VERSION 1.10.2
 
@@ -13,7 +13,12 @@ ENV LUA_NGINX_MODULE_VERSION 0.10.6
 ENV LUAJIT_LIB=/usr/local/lib/lua/5.1
 ENV LUAJIT_INC=/usr/local/include/luajit-2.0
 
-RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
+#Original nginx build (with modules ngx_devel_kit, lua-nginx-module, nginx-auth-ldap)
+RUN apk update && apk add git && mkdir -p /opt && cd /opt && git clone https://github.com/simpl/ngx_devel_kit && cd ngx_devel_kit && git checkout -b v$NGX_DEVEL_KIT_VERSION && \
+    apk add make g++ && cd /opt && git clone https://github.com/luajit/luajit && cd luajit && git checkout -b v$LUAJIT_VERSION && make && make install && cd .. && \
+    cd /opt && git clone https://github.com/openresty/lua-nginx-module && cd lua-nginx-module && git checkout -b v$LUA_NGINX_MODULE_VERSION && \
+    cd /opt && git clone https://github.com/kvspb/nginx-auth-ldap.git && apk del git && \ 
+    GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	&& CONFIG="\
 		--prefix=/etc/nginx \
 		--sbin-path=/usr/sbin/nginx \
