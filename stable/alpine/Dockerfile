@@ -4,6 +4,15 @@ MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
 
 ENV NGINX_VERSION 1.10.2
 
+#Changed - get LUA (jit, module, nginx_ndk) and dependencies
+ENV LUA_VERSION 5.3.3
+ENV NGX_DEVEL_KIT_VERSION 0.3.0
+ENV LUAJIT_VERSION 2.0.4
+ENV LUA_NGINX_MODULE_VERSION 0.10.6
+
+ENV LUAJIT_LIB=/usr/local/lib/lua/5.1
+ENV LUAJIT_INC=/usr/local/include/luajit-2.0
+
 RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	&& CONFIG="\
 		--prefix=/etc/nginx \
@@ -21,6 +30,10 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		--http-scgi-temp-path=/var/cache/nginx/scgi_temp \
 		--user=nginx \
 		--group=nginx \
+                --with-ld-opt="-Wl,-rpath,/usr/local/lib/lua/5.1" \
+                --add-module=/opt/ngx_devel_kit \
+                --add-module=/opt/lua-nginx-module \
+                --add-module=/opt/nginx-auth-ldap \
 		--with-http_ssl_module \
 		--with-http_realip_module \
 		--with-http_addition_module \
@@ -64,6 +77,7 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		gd-dev \
 		geoip-dev \
 		perl-dev \
+                openldap-dev \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
 	&& export GNUPGHOME="$(mktemp -d)" \

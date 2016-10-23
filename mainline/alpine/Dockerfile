@@ -1,10 +1,24 @@
 FROM alpine:3.4
 
-MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com"
+MAINTAINER NGINX Docker Maintainers "docker-maint@nginx.com", Dmitrii Zolotov <dzolotov@herzen.spb.ru>
 
 ENV NGINX_VERSION 1.11.5
 
-RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
+#Changed - get LUA (jit, module, nginx_ndk) and dependencies
+ENV LUA_VERSION 5.3.3
+ENV NGX_DEVEL_KIT_VERSION 0.3.0
+ENV LUAJIT_VERSION 2.0.4
+ENV LUA_NGINX_MODULE_VERSION 0.10.6
+
+ENV LUAJIT_LIB=/usr/local/lib/lua/5.1
+ENV LUAJIT_INC=/usr/local/include/luajit-2.0
+
+#Original nginx build (with modules ngx_devel_kit, lua-nginx-module, nginx-auth-ldap)
+RUN apk update && apk add git && mkdir -p /opt && cd /opt && git clone https://github.com/simpl/ngx_devel_kit && cd ngx_devel_kit && git checkout -b v$NGX_DEVEL_KIT_VERSION && \
+    apk add make g++ && cd /opt && git clone https://github.com/luajit/luajit && cd luajit && git checkout -b v$LUAJIT_VERSION && make && make install && cd .. && \
+    cd /opt && git clone https://github.com/openresty/lua-nginx-module && cd lua-nginx-module && git checkout -b v$LUA_NGINX_MODULE_VERSION && \
+    cd /opt && git clone https://github.com/kvspb/nginx-auth-ldap.git && apk del git && \ 
+    GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	&& CONFIG="\
 		--prefix=/etc/nginx \
 		--sbin-path=/usr/sbin/nginx \
@@ -19,8 +33,12 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		--http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
 		--http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
 		--http-scgi-temp-path=/var/cache/nginx/scgi_temp \
-		--user=nginx \
+		--user=nginx \                  	
 		--group=nginx \
+                --with-ld-opt="-Wl,-rpath,/usr/local/lib/lua/5.1" \
+                --add-module=/opt/ngx_devel_kit \
+                --add-module=/opt/lua-nginx-module \
+                --add-module=/opt/nginx-auth-ldap \
 		--with-http_ssl_module \
 		--with-http_realip_module \
 		--with-http_addition_module \
@@ -67,6 +85,7 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		gd-dev \
 		geoip-dev \
 		perl-dev \
+                openldap-dev \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
 	&& export GNUPGHOME="$(mktemp -d)" \
@@ -103,6 +122,7 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	&& strip /usr/sbin/nginx* \
 	&& strip /usr/lib/nginx/modules/*.so \
 	&& rm -rf /usr/src/nginx-$NGINX_VERSION \
+        && rm -rf /opt \
 	\
 	# Bring in gettext so we can get `envsubst`, then throw
 	# the rest away. To do this, we need to install `gettext`
