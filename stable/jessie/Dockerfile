@@ -13,7 +13,11 @@ ENV LUA_NGINX_MODULE_VERSION 0.10.6
 ENV LUAJIT_LIB=/usr/local/lib/lua/5.1
 ENV LUAJIT_INC=/usr/local/include/luajit-2.0
 
-RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
+RUN apt update && apt install -y git pax-utils && mkdir -p /opt && cd /opt && git clone https://github.com/simpl/ngx_devel_kit && cd ngx_devel_kit && git checkout -b v$NGX_DEVEL_KIT_VERSION && \
+    apt install -y make g++ && cd /opt && git clone https://github.com/luajit/luajit && cd luajit && git checkout -b v$LUAJIT_VERSION && make && make install && cd .. && \
+    cd /opt && git clone https://github.com/openresty/lua-nginx-module && cd lua-nginx-module && git checkout -b v$LUA_NGINX_MODULE_VERSION && \
+    cd /opt && git clone https://github.com/kvspb/nginx-auth-ldap.git && apt remove -y git && \ 
+    GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	&& CONFIG="\
 		--prefix=/etc/nginx \
 		--sbin-path=/usr/sbin/nginx \
@@ -68,18 +72,18 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		libssl-dev \
 		libpcre3-dev \
 	        zlib1g-dev \
-		linux-headers \
+		linux-headers-amd64 \
 		curl \
 		gnupg \
 		libxslt-dev \
 		libgd-dev \
 		libgeoip-dev \
-		perl-dev \
+		libperl-dev \
                 libldap-dev \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
 	&& export GNUPGHOME="$(mktemp -d)" \
-	&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
+	&& gpg --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-keys "$GPG_KEYS" \
 	&& gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
 	&& rm -r "$GNUPGHOME" nginx.tar.gz.asc \
 	&& mkdir -p /usr/src \
@@ -115,24 +119,22 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	# the rest away. To do this, we need to install `gettext`
 	# then move `envsubst` out of the way so `gettext` can
 	# be deleted completely, then move `envsubst` back.
-	&& apk install -y gettext \
+	&& apt install -y gettext \
 	&& mv /usr/bin/envsubst /tmp/ \
 	\
 	&& runDeps="$( \
 		scanelf --needed --nobanner /usr/sbin/nginx /usr/lib/nginx/modules/*.so /tmp/envsubst \
-			| awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
-			| sort -u \
-			| xargs -r apk info --installed \
-			| sort -u \
+			| awk '{ gsub(/,/, "\nso:", $2); print $2 }' \
+			| sort -u | xargs -r dpkg -S | awk -F':' '{ print $1 }' | sort -u \
 	)" \
-	&& apk add --no-cache --virtual .nginx-rundeps $runDeps \
-	&& apk del .build-deps \
-	&& apk del .gettext \
+	&& apt install -y $runDeps \
 	&& mv /tmp/envsubst /usr/local/bin/ \
 	\
 	# forward request and error logs to docker log collector
 	&& ln -sf /dev/stdout /var/log/nginx/access.log \
-	&& ln -sf /dev/stderr /var/log/nginx/error.log
+	&& ln -sf /dev/stderr /var/log/nginx/error.log \
+        # some cleanup 
+        && apt purge -y build-essential git pax-utils libxslt-dev libgd-dev libperl-dev libldap-dev libssl-dev libpcre3-dev zlib1g-dev linux-headers-amd64 libgd-dev && apt-get autoremove -y && mkdir -p /var/cache/nginx/
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
