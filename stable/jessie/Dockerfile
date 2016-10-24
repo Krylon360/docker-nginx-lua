@@ -63,21 +63,19 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	" \
 	&& groupadd -r nginx \
 	&& useradd -d /var/cache/nginx -s /sbin/nologin -g nginx nginx \
-	&& apt install -y \
-		gcc \
-		libc-dev \
-		make \
-		openssl-dev \
-		pcre-dev \
-		zlib-dev \
+	&& apt update && apt install -y \
+		build-essential \
+		libssl-dev \
+		libpcre3-dev \
+	        zlib1g-dev \
 		linux-headers \
 		curl \
 		gnupg \
 		libxslt-dev \
-		gd-dev \
-		geoip-dev \
+		libgd-dev \
+		libgeoip-dev \
 		perl-dev \
-                openldap-dev \
+                libldap-dev \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
 	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
 	&& export GNUPGHOME="$(mktemp -d)" \
