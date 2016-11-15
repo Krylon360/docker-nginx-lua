@@ -122,7 +122,6 @@ RUN apk update && apk add git && mkdir -p /opt && cd /opt && git clone https://g
   && install -m755 objs/ngx_http_geoip_module-debug.so /usr/lib/nginx/modules/ngx_http_geoip_module-debug.so \
   && install -m755 objs/ngx_http_perl_module-debug.so /usr/lib/nginx/modules/ngx_http_perl_module-debug.so \
   && install -m755 objs/ngx_stream_geoip_module-debug.so /usr/lib/nginx/modules/ngx_stream_geoip_module-debug.so \
-  && install -m755 /opt/nginx-lua-prometheus/prometheus.lua /etc/nginx/modules/prometheus.lua \
   && ln -s ../../usr/lib/nginx/modules /etc/nginx/modules \
   && strip /usr/sbin/nginx* \
   && strip /usr/lib/nginx/modules/*.so \
@@ -154,6 +153,7 @@ RUN apk update && apk add git && mkdir -p /opt && cd /opt && git clone https://g
 
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
+COPY prometheus.lua /etc/nginx/prometheus.lua
 
 EXPOSE 8080 443 9145
 
