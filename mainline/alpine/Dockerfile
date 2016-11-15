@@ -18,7 +18,6 @@ RUN apk update && apk add git && mkdir -p /opt && cd /opt && git clone https://g
     apk add make g++ && cd /opt && git clone https://github.com/luajit/luajit && cd luajit && git checkout -b v$LUAJIT_VERSION && make && make install && cd .. && \
     cd /opt && git clone https://github.com/openresty/lua-nginx-module && cd lua-nginx-module && git checkout -b v$LUA_NGINX_MODULE_VERSION && cd .. \
     cd /opt && git clone https://github.com/kvspb/nginx-auth-ldap.git && cd .. && \
-    cd /opt && git clone https://github.com/knyar/nginx-lua-prometheus.git && cd .. && \
     cd /opt && git clone git://github.com/vozlt/nginx-module-vts.git && cd .. && \
     apk del git && \
     GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
